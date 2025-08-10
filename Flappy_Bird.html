@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Brainrot Flappy</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #000;
+    overflow: hidden;
+  }
+  #gameCanvas {
+    background: #70c5ce;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(1);
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    transition: filter 0.3s ease;
+  }
+  #homeScreen {
+    position: absolute;
+    top:0; left:0; width: 100vw; height: 100vh;
+    background: url('background.jpg') no-repeat center center/cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-shadow: 2px 2px 5px #000;
+    user-select: none;
+    z-index: 10;
+  }
+  #homeScreen h1 {
+    font-size: 48px;
+    margin-bottom: 40px;
+    text-shadow:
+      0 0 5px #0ff,
+      0 0 10px #0ff,
+      0 0 20px #0ff,
+      0 0 40px #0ff;
+  }
+  .menuButton {
+    background: rgba(255 255 255 / 0.15);
+    border: 2px solid rgba(0,255,255,0.6);
+    border-radius: 15px;
+    padding: 15px 40px;
+    margin: 10px;
+    font-size: 24px;
+    color: #0ff;
+    cursor: pointer;
+    transition:
+      background 0.4s ease,
+      box-shadow 0.6s ease,
+      transform 0.2s ease;
+    width: 200px;
+    box-shadow:
+      0 0 8px rgba(0,255,255,0.4),
+      inset 0 0 10px rgba(0,255,255,0.3);
+  }
+  .menuButton:hover, .menuButton:focus {
+    background: rgba(0,255,255,0.3);
+    box-shadow:
+      0 0 15px #0ff,
+      0 0 30px #0ff,
+      inset 0 0 15px #0ff;
+    transform: scale(1.05);
+    outline: none;
+  }
+  #settingsPanel, #aboutPanel, #characterPanel {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: none;
+    text-align: center;
+    user-select: none;
+    box-shadow:
+      0 0 15px #0ff;
+    transition: opacity 0.4s ease;
+    opacity: 0;
+    z-index: 20;
+  }
+  #settingsPanel.show, #aboutPanel.show, #characterPanel.show {
+    display: block;
+    opacity: 1;
+  }
+  #settingsPanel label {
+    display: block;
+    margin: 15px 0 5px;
+    font-weight: bold;
+  }
+  input[type=range] {
+    width: 100%;
+    margin: 5px 0 20px;
+  }
+  #closeSettings, #closeAbout, #closeCharacter {
+    margin-top: 20px;
+    padding: 10px 25px;
+    font-size: 18px;
+    cursor: pointer;
+    background: #ff5555;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    transition:
+      background 0.3s ease,
+      box-shadow 0.4s ease;
+    box-shadow: 0 0 10px #ff5555;
+  }
+  #closeSettings:hover, #closeAbout:hover, #closeCharacter:hover {
+    background: #ff3333;
+    box-shadow: 0 0 20px #ff4444;
+  }
+  #restartBtn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 100px);
+    padding: 15px 40px;
+    font-size: 24px;
+    background: rgba(255 255 255 / 0.8);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    display: none;
+    box-shadow:
+      0 0 15px #0ff,
+      inset 0 0 10px #0ff;
+    transition:
+      box-shadow 0.6s ease,
+      transform 0.2s ease;
+    z-index: 15;
+  }
+  #restartBtn:hover, #restartBtn:focus {
+    box-shadow:
+      0 0 30px #0ff,
+      inset 0 0 20px #0ff;
+    transform: scale(1.1);
+    outline: none;
+  }
+  #gameOverText {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    color: white;
+    text-shadow:
+      0 0 10px black,
+      0 0 20px #0ff,
+      0 0 40px #0ff;
+    display: none;
+    user-select: none;
+    transition: opacity 0.6s ease;
+    opacity: 0;
+    z-index: 15;
+  }
+  #gameOverText.show {
+    display: block;
+    opacity: 1;
+  }
+  /* Character selection grid */
+  #characterPanel .characterGrid {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  #characterPanel .characterOption {
+    border: 3px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+    width: 80px;
+    height: 60px;
+    object-fit: contain;
+  }
+  #characterPanel .characterOption.selected {
+    border-color: #0ff;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px #0ff;
+  }
+</style>
+</head>
+<body>
+
+<div id="homeScreen">
+  <h1>Brainrot Flappy</h1>
+  <button class="menuButton" id="startBtn">Start</button>
+  <button class="menuButton" id="settingsBtn">Settings</button>
+  <button class="menuButton" id="characterBtn">Select Character</button>
+  <button class="menuButton" id="aboutBtn">About Us</button>
+</div>
+
+<div id="settingsPanel">
+  <h2>Settings</h2>
+  <label><input type="checkbox" id="muteMusic"> Mute Music</label>
+
+  <label for="brightnessRange">Brightness</label>
+  <input type="range" id="brightnessRange" min="0.5" max="1.5" step="0.01" value="1">
+
+  <label for="sensitivityRange">Sensitivity (Jump Power)</label>
+  <input type="range" id="sensitivityRange" min="5" max="20" step="0.5" value="10">
+
+  <button id="closeSettings">Close</button>
+</div>
+
+<div id="aboutPanel">
+  <h2>About Us</h2>
+  <p>Developer: Edrian</p>
+  <p>This game is built for a test only and it does not have full security.<br>Thank you :) It's a prank!</p>
+  <button id="closeAbout">Close</button>
+</div>
+
+<div id="characterPanel">
+  <h2>Select Your Character</h2>
+  <div class="characterGrid">
+    <img src="Tung Tung Sahur.png" alt="Tung Tung Sahur" class="characterOption selected" data-src="Tung Tung Sahur.png" />
+    <img src="Taralalero Tralala.png" alt="Taralalero Tralala" class="characterOption" data-src="Taralalero Tralala.png" />
+    <img src="Bombardino.png" alt="Bombardino" class="characterOption" data-src="Bombardino.png" />
+    <img src="Barellina Cuppucina.png" alt="Barellina Cuppucina" class="characterOption" data-src="Barellina Cuppucina.png" />
+    <img src="Garamararaman.png" alt="Garamararaman" class="characterOption" data-src="Garamararaman.png" />
+  </div>
+  <button id="closeCharacter">Close</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<button id="restartBtn">Restart</button>
+<div id="gameOverText">Game Over</div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<audio id="hitSfx" src="hit.mp3" preload="auto"></audio>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let canvasWidth = window.innerWidth;
+let canvasHeight = window.innerHeight;
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+
+const bgm = document.getElementById('bgm');
+const hitSfx = document.getElementById('hitSfx');
+const muteCheckbox = document.getElementById('muteMusic');
+const brightnessRange = document.getElementById('brightnessRange');
+const sensitivityRange = document.getElementById('sensitivityRange');
+
+const birdImg = new Image();
+birdImg.src = 'Tung Tung Sahur.png'; // default bird
+
+// Game variables
+let frames = 0;
+let gameState = 'HOME'; // HOME, PLAYING, GAMEOVER
+let pipes = [];
+let score = 0;
+let bestScore = 0;
+let bird = { x: 80, y: canvasHeight / 2, w: 40, h: 30, dy: 0 };
+let jumpPower = -10;
+const gravity = 0.5;
+const pipeWidth = 60;
+const pipeGap = 150;
+const pipeSpeed = 2;
+
+// UI Elements
+const homeScreen = document.getElementById('homeScreen');
+const startBtn = document.getElementById('startBtn');
+const settingsBtn = document.getElementById('settingsBtn');
+const aboutBtn = document.getElementById('aboutBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const aboutPanel = document.getElementById('aboutPanel');
+const closeSettings = document.getElementById('closeSettings');
+const closeAbout = document.getElementById('closeAbout');
+const restartBtn = document.getElementById('restartBtn');
+const gameOverText = document.getElementById('gameOverText');
+
+const characterBtn = document.getElementById('characterBtn');
+const characterPanel = document.getElementById('characterPanel');
+const closeCharacter = document.getElementById('closeCharacter');
+const characterOptions = document.querySelectorAll('#characterPanel .characterOption');
+
+function resetGame() {
+  bird.y = canvasHeight / 2;
+  bird.dy = 0;
+  pipes = [];
+  score = 0;
+  frames = 0;
+  gameOverText.classList.remove('show');
+  restartBtn.style.display = 'none';
+}
+
+function createPipe() {
+  const topHeight = Math.random() * (canvasHeight - pipeGap - 120) + 50;
+  pipes.push({
+    x: canvasWidth,
+    top: topHeight,
+    bottom: topHeight + pipeGap,
+    width: pipeWidth,
+    passed: false
+  });
+}
+
+function drawBackground() {
+  // simple gradient background for now
+  let gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+  gradient.addColorStop(0, '#70c5ce');
+  gradient.addColorStop(1, '#4298b5');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+function drawBird() {
+  if (birdImg.complete && birdImg.naturalWidth !== 0) {
+    ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
+  } else {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+  }
+}
+
+function drawPipeDetails(x, y, width, height, isTop) {
+  // Green base pipe
+  ctx.fillStyle = '#228B22';
+  ctx.fillRect(x, y, width, height);
+
+  // Pipe edges highlight
+  ctx.strokeStyle = '#2ecc40';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, width, height);
+
+  // Add pipe "rings" details
+  ctx.fillStyle = '#196619';
+  const ringCount = Math.floor(height / 15);
+  for (let i = 0; i < ringCount; i++) {
+    let ringY = y + i * 15;
+    ctx.fillRect(x, ringY, width, 5);
+  }
+
+  // Pipe opening edge (circle)
+  if (isTop) {
+    ctx.beginPath();
+    ctx.fillStyle = '#1e7d1e';
+    ctx.arc(x + width / 2, y + height, width / 2, Math.PI, 0);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = '#1e7d1e';
+    ctx.arc(x + width / 2, y, width / 2, 0, Math.PI);
+    ctx.fill();
+  }
+}
+
+function drawPipes() {
+  pipes.forEach(pipe => {
+    // top pipe
+    drawPipeDetails(pipe.x, 0, pipe.width, pipe.top, true);
+    // bottom pipe
+    drawPipeDetails(pipe.x, pipe.bottom, pipe.width, canvasHeight - pipe.bottom, false);
+  });
+}
+
+function drawScore() {
+  ctx.fillStyle = 'white';
+  ctx.font = '28px Arial';
+  ctx.fillText(`Score: ${score}`, 20, 50);
+  ctx.fillText(`Best: ${bestScore}`, 20, 90);
+}
+
+function updateGame() {
+  frames++;
+
+  bird.dy += gravity;
+  bird.y += bird.dy;
+
+  if (bird.y + bird.h >= canvasHeight) {
+    bird.y = canvasHeight - bird.h;
+    triggerGameOver();
+  }
+  if (bird.y < 0) {
+    bird.y = 0;
+    bird.dy = 0;
+  }
+
+  if (frames % 60 === 0) {
+    createPipe();
+  }
+
+  pipes.forEach(pipe => {
+    pipe.x -= pipeSpeed;
+  });
+
+  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+
+  for (let pipe of pipes) {
+    if (
+      bird.x + bird.w > pipe.x &&
+      bird.x < pipe.x + pipe.width &&
+      (bird.y < pipe.top || bird.y + bird.h > pipe.bottom)
+    ) {
+      triggerGameOver();
+    }
+  }
+
+  pipes.forEach(pipe => {
+    if (!pipe.passed && pipe.x + pipe.width < bird.x) {
+      score++;
+      pipe.passed = true;
+    }
+  });
+}
+
+function triggerGameOver() {
+  if (gameState !== 'PLAYING') return;
+  gameState = 'GAMEOVER';
+  hitSfx.play();
+  bgm.pause();
+  bestScore = Math.max(score, bestScore);
+
+  gameOverText.classList.add('show');
+  restartBtn.style.display = 'block';
+}
+
+function showHomeScreen() {
+  homeScreen.style.display = 'flex';
+  canvas.style.display = 'none';
+  gameOverText.classList.remove('show');
+  restartBtn.style.display = 'none';
+  settingsPanel.classList.remove('show');
+  aboutPanel.classList.remove('show');
+  characterPanel.classList.remove('show');
+  gameState = 'HOME';
+}
+
+function hideHomeScreen() {
+  homeScreen.style.display = 'none';
+  canvas.style.display = 'block';
+}
+
+function gameLoop() {
+  if (gameState === 'PLAYING') {
+    updateGame();
+  }
+  drawBackground();
+  drawPipes();
+  drawBird();
+  drawScore();
+  requestAnimationFrame(gameLoop);
+}
+
+canvas.addEventListener('click', () => {
+  if (gameState === 'PLAYING') bird.dy = jumpPower;
+});
+document.addEventListener('keydown', e => {
+  if (gameState === 'PLAYING' && (e.code === 'Space' || e.code === 'ArrowUp')) {
+    bird.dy = jumpPower;
+  }
+});
+
+startBtn.onclick = () => {
+  gameState = 'PLAYING';
+  resetGame();
+  hideHomeScreen();
+  bgm.currentTime = 0;
+  if (!muteCheckbox.checked) bgm.play();
+};
+
+settingsBtn.onclick = () => {
+  settingsPanel.classList.add('show');
+};
+
+aboutBtn.onclick = () => {
+  aboutPanel.classList.add('show');
+};
+
+closeSettings.onclick = () => {
+  settingsPanel.classList.remove('show');
+};
+
+closeAbout.onclick = () => {
+  aboutPanel.classList.remove('show');
+};
+
+restartBtn.onclick = () => {
+  gameState = 'PLAYING';
+  resetGame();
+  restartBtn.style.display = 'none';
+  gameOverText.classList.remove('show');
+  bgm.currentTime = 0;
+  if (!muteCheckbox.checked) bgm.play();
+};
+
+muteCheckbox.onchange = () => {
+  if (muteCheckbox.checked) {
+    bgm.pause();
+  } else if (gameState === 'PLAYING') {
+    bgm.play();
+  }
+};
+
+brightnessRange.oninput = () => {
+  const val = brightnessRange.value;
+  canvas.style.filter = `brightness(${val})`;
+};
+
+sensitivityRange.oninput = () => {
+  jumpPower = -sensitivityRange.value;
+};
+
+characterBtn.onclick = () => {
+  characterPanel.classList.add('show');
+};
+
+closeCharacter.onclick = () => {
+  characterPanel.classList.remove('show');
+};
+
+characterOptions.forEach(option => {
+  option.addEventListener('click', () => {
+    characterOptions.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+    birdImg.src = option.dataset.src;
+    characterPanel.classList.remove('show');
+  });
+});
+
+window.addEventListener('resize', () => {
+  canvasWidth = window.innerWidth;
+  canvasHeight = window.innerHeight;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  // Reset bird position so it's centered vertically
+  if (gameState !== 'PLAYING') {
+    bird.y = canvasHeight / 2;
+  }
+});
+
+showHomeScreen();
+gameLoop();
+</script>
+
+</body>
+</html>
