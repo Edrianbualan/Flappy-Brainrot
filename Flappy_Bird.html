@@ -211,7 +211,7 @@
   <input type="range" id="brightnessRange" min="0.5" max="1.5" step="0.01" value="1">
 
   <label for="sensitivityRange">Sensitivity (Jump Power)</label>
-  <input type="range" id="sensitivityRange" min="5" max="20" step="0.5" value="10">
+  <input type="range" id="sensitivityRange" min="6" max="10" step="0.1" value="7.5">
 
   <button id="closeSettings">Close</button>
 </div>
@@ -266,13 +266,14 @@ let frames = 0;
 let gameState = 'HOME'; // HOME, PLAYING, GAMEOVER
 let pipes = [];
 let score = 0;
-let bestScore = 0;
+let bestScore = 
+  arseInt(localStorage.getItem('bestScore')) || 0;
 let bird = { x: 80, y: canvasHeight / 2, w: 40, h: 30, dy: 0 };
-let jumpPower = -10;
-const gravity = 0.5;
-const pipeWidth = 60;
-const pipeGap = 150;
-const pipeSpeed = 2;
+let jumpPower = -7.5;
+const gravity = 0.38;
+const pipeWidth = 70;
+const pipeGap = 200;
+const pipeSpeed = 1.8;
 
 // UI Elements
 const homeScreen = document.getElementById('homeScreen');
@@ -302,7 +303,7 @@ function resetGame() {
 }
 
 function createPipe() {
-  const topHeight = Math.random() * (canvasHeight - pipeGap - 120) + 50;
+  const topHeight = Math.random() * (canvasHeight - pipeGap - 200) + 100;
   pipes.push({
     x: canvasWidth,
     top: topHeight,
@@ -322,12 +323,29 @@ function drawBackground() {
 }
 
 function drawBird() {
-  if (birdImg.complete && birdImg.naturalWidth !== 0) {
-    ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
-  } else {
-    ctx.fillStyle = 'yellow';
-    ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
-  }
+    ctx.save();
+
+    ctx.translate(
+        bird.x + bird.w / 2,
+        bird.y + bird.h / 2
+    );
+
+    let angle = Math.max(
+        -0.5,
+        Math.min(1, bird.dy * 0.05)
+    );
+
+    ctx.rotate(angle);
+
+    ctx.drawImage(
+        birdImg,
+        -bird.w / 2,
+        -bird.h / 2,
+        bird.w,
+        bird.h
+    );
+
+    ctx.restore();
 }
 
 function drawPipeDetails(x, y, width, height, isTop) {
@@ -386,14 +404,20 @@ function updateGame() {
 
   if (bird.y + bird.h >= canvasHeight) {
     bird.y = canvasHeight - bird.h;
-    triggerGameOver();
-  }
+    triggerGameOver() 
+    bestScore = Math.max(bestScore, score);
+    
+localStorage.setItem(
+    'bestScore',
+    bestScore
+);
+    
   if (bird.y < 0) {
     bird.y = 0;
     bird.dy = 0;
   }
 
-  if (frames % 60 === 0) {
+  if (frames % 98 === 0) {
     createPipe();
   }
 
@@ -459,13 +483,21 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-canvas.addEventListener('click', () => {
-  if (gameState === 'PLAYING') bird.dy = jumpPower;
-});
+function flap() {
+    if (gameState !== 'PLAYING') return;
+
+    bird.dy = Math.max(jumpPower, bird.dy - 2);
+}
+  
+canvas.addEventListener('click', flap);
+
 document.addEventListener('keydown', e => {
-  if (gameState === 'PLAYING' && (e.code === 'Space' || e.code === 'ArrowUp')) {
-    bird.dy = jumpPower;
-  }
+    if (
+        gameState === 'PLAYING' &&
+        (e.code === 'Space' || e.code === 'ArrowUp')
+    ) {
+        flap();
+    }
 });
 
 startBtn.onclick = () => {
@@ -515,7 +547,7 @@ brightnessRange.oninput = () => {
 };
 
 sensitivityRange.oninput = () => {
-  jumpPower = -sensitivityRange.value;
+  jumpPower = -parseFloat(sensitivityRange.value);
 };
 
 characterBtn.onclick = () => {
