@@ -2,950 +2,585 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Brainrot Flappy</title>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap');
-    
-    :root {
-        --neon-cyan: #00ffff;
-        --neon-pink: #ff00ff;
-    }
-    
-    html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-        font-family: 'Press Start 2P', system-ui;
-        touch-action: none;
-        user-select: none;
-    }
-    
-    #gameContainer {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-    }
-    
-    #gameCanvas {
-        display: block;
-        background: #70c5ce;
-        width: 100%;
-        height: 100%;
-        image-rendering: pixelated;
-    }
-    
-    .overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-    }
-    
-    #homeScreen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom, #1a0033, #000033);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        z-index: 100;
-        transition: opacity 0.4s ease;
-        text-align: center;
-    }
-    
-    #homeScreen h1 {
-        font-size: 3.5rem;
-        margin: 0 0 2rem 0;
-        background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 20px #00ffff;
-        animation: titleGlow 2s infinite alternate;
-    }
-    
-    @keyframes titleGlow {
-        from { text-shadow: 0 0 10px #00ffff; }
-        to { text-shadow: 0 0 30px #ff00ff, 0 0 40px #00ffff; }
-    }
-    
-    .menuButton {
-        background: rgba(0, 255, 255, 0.1);
-        border: 3px solid var(--neon-cyan);
-        color: var(--neon-cyan);
-        padding: 15px 40px;
-        margin: 12px;
-        font-size: 1.4rem;
-        cursor: pointer;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        width: 280px;
-        pointer-events: all;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    
-    .menuButton:hover {
-        background: rgba(0, 255, 255, 0.3);
-        transform: scale(1.08) translateY(-4px);
-        box-shadow: 0 0 30px var(--neon-cyan);
-    }
-    
-    .panel {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.8);
-        background: rgba(10, 10, 30, 0.95);
-        border: 3px solid var(--neon-cyan);
-        border-radius: 16px;
-        padding: 30px 40px;
-        width: 380px;
-        max-width: 90vw;
-        color: white;
-        z-index: 200;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
-        pointer-events: all;
-    }
-    
-    .panel.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translate(-50%, -50%) scale(1);
-    }
-    
-    .panel h2 {
-        margin: 0 0 25px 0;
-        text-align: center;
-        color: var(--neon-cyan);
-        text-shadow: 0 0 10px currentColor;
-    }
-    
-    .closeBtn {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: #ff3366;
-        color: white;
-        border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .slider {
-        width: 100%;
-        margin: 15px 0;
-    }
-    
-    #characterGrid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-    
-    .characterOption {
-        width: 80px;
-        height: 70px;
-        object-fit: contain;
-        border: 3px solid transparent;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: rgba(255,255,255,0.1);
-    }
-    
-    .characterOption.selected {
-        border-color: #ffff00;
-        box-shadow: 0 0 20px #ffff00;
-        transform: scale(1.15);
-    }
-    
-    #gameOverScreen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 150;
-        color: white;
-        text-align: center;
-    }
-    
-    #medal {
-        font-size: 5rem;
-        margin: 20px 0;
-        filter: drop-shadow(0 0 20px gold);
-    }
-    
-    #pauseBtn {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(255,255,255,0.2);
-        color: white;
-        border: 2px solid white;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        font-size: 20px;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 120;
-        pointer-events: all;
-    }
-    
-    .scorePopup {
-        position: absolute;
-        color: #ffff00;
-        font-size: 28px;
-        font-weight: bold;
-        text-shadow: 3px 3px 0 #000;
-        pointer-events: none;
-        z-index: 110;
-        animation: scorePop 1.2s forwards;
-    }
-    
-    @keyframes scorePop {
-        0% { transform: translateY(0); opacity: 1; }
-        100% { transform: translateY(-80px); opacity: 0; }
-    }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #000;
+    overflow: hidden;
+  }
+  #gameCanvas {
+    background: #70c5ce;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(1);
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    transition: filter 0.3s ease;
+  }
+  #homeScreen {
+    position: absolute;
+    top:0; left:0; width: 100vw; height: 100vh;
+    background: url('background.jpg') no-repeat center center/cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-shadow: 2px 2px 5px #000;
+    user-select: none;
+    z-index: 10;
+  }
+  #homeScreen h1 {
+    font-size: 48px;
+    margin-bottom: 40px;
+    text-shadow:
+      0 0 5px #0ff,
+      0 0 10px #0ff,
+      0 0 20px #0ff,
+      0 0 40px #0ff;
+  }
+  .menuButton {
+    background: rgba(255 255 255 / 0.15);
+    border: 2px solid rgba(0,255,255,0.6);
+    border-radius: 15px;
+    padding: 15px 40px;
+    margin: 10px;
+    font-size: 24px;
+    color: #0ff;
+    cursor: pointer;
+    transition:
+      background 0.4s ease,
+      box-shadow 0.6s ease,
+      transform 0.2s ease;
+    width: 200px;
+    box-shadow:
+      0 0 8px rgba(0,255,255,0.4),
+      inset 0 0 10px rgba(0,255,255,0.3);
+  }
+  .menuButton:hover, .menuButton:focus {
+    background: rgba(0,255,255,0.3);
+    box-shadow:
+      0 0 15px #0ff,
+      0 0 30px #0ff,
+      inset 0 0 15px #0ff;
+    transform: scale(1.05);
+    outline: none;
+  }
+  #settingsPanel, #aboutPanel, #characterPanel {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: none;
+    text-align: center;
+    user-select: none;
+    box-shadow:
+      0 0 15px #0ff;
+    transition: opacity 0.4s ease;
+    opacity: 0;
+    z-index: 20;
+  }
+  #settingsPanel.show, #aboutPanel.show, #characterPanel.show {
+    display: block;
+    opacity: 1;
+  }
+  #settingsPanel label {
+    display: block;
+    margin: 15px 0 5px;
+    font-weight: bold;
+  }
+  input[type=range] {
+    width: 100%;
+    margin: 5px 0 20px;
+  }
+  #closeSettings, #closeAbout, #closeCharacter {
+    margin-top: 20px;
+    padding: 10px 25px;
+    font-size: 18px;
+    cursor: pointer;
+    background: #ff5555;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    transition:
+      background 0.3s ease,
+      box-shadow 0.4s ease;
+    box-shadow: 0 0 10px #ff5555;
+  }
+  #closeSettings:hover, #closeAbout:hover, #closeCharacter:hover {
+    background: #ff3333;
+    box-shadow: 0 0 20px #ff4444;
+  }
+  #restartBtn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 100px);
+    padding: 15px 40px;
+    font-size: 24px;
+    background: rgba(255 255 255 / 0.8);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    display: none;
+    box-shadow:
+      0 0 15px #0ff,
+      inset 0 0 10px #0ff;
+    transition:
+      box-shadow 0.6s ease,
+      transform 0.2s ease;
+    z-index: 15;
+  }
+  #restartBtn:hover, #restartBtn:focus {
+    box-shadow:
+      0 0 30px #0ff,
+      inset 0 0 20px #0ff;
+    transform: scale(1.1);
+    outline: none;
+  }
+  #gameOverText {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    color: white;
+    text-shadow:
+      0 0 10px black,
+      0 0 20px #0ff,
+      0 0 40px #0ff;
+    display: none;
+    user-select: none;
+    transition: opacity 0.6s ease;
+    opacity: 0;
+    z-index: 15;
+  }
+  #gameOverText.show {
+    display: block;
+    opacity: 1;
+  }
+  /* Character selection grid */
+  #characterPanel .characterGrid {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  #characterPanel .characterOption {
+    border: 3px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+    width: 80px;
+    height: 60px;
+    object-fit: contain;
+  }
+  #characterPanel .characterOption.selected {
+    border-color: #0ff;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px #0ff;
+  }
 </style>
 </head>
 <body>
-<div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
-    
-    <!-- Home Screen -->
-    <div id="homeScreen">
-        <h1>BRAINROT<br>FLAPPY</h1>
-        <button class="menuButton" id="startBtn">START GAME</button>
-        <button class="menuButton" id="characterBtn">CHARACTERS</button>
-        <button class="menuButton" id="settingsBtn">SETTINGS</button>
-        <button class="menuButton" id="aboutBtn">ABOUT</button>
-    </div>
-    
-    <!-- Settings Panel -->
-    <div id="settingsPanel" class="panel">
-        <button class="closeBtn" id="closeSettings">×</button>
-        <h2>SETTINGS</h2>
-        
-        <label style="display:block;margin:15px 0 8px;">Music Volume</label>
-        <input type="range" id="musicVolume" class="slider" min="0" max="1" step="0.01" value="0.7">
-        
-        <label style="display:block;margin:15px 0 8px;">SFX Volume</label>
-        <input type="range" id="sfxVolume" class="slider" min="0" max="1" step="0.01" value="0.8">
-        
-        <label style="display:block;margin:15px 0 8px;">Brightness</label>
-        <input type="range" id="brightnessRange" class="slider" min="0.6" max="1.4" step="0.01" value="1">
-        
-        <label style="display:block;margin:15px 0 8px;">Jump Power</label>
-        <input type="range" id="sensitivityRange" class="slider" min="6" max="11" step="0.1" value="8">
-        
-        <label style="display:flex;align-items:center;gap:10px;margin-top:20px;">
-            <input type="checkbox" id="muteAll"> Mute All
-        </label>
-    </div>
-    
-    <!-- Character Panel -->
-    <div id="characterPanel" class="panel">
-        <button class="closeBtn" id="closeCharacter">×</button>
-        <h2>SELECT SKIBIDI</h2>
-        <div id="characterGrid">
-            <img src="Tung Tung Sahur.png" alt="Tung Tung" class="characterOption selected" data-src="Tung Tung Sahur.png">
-            <img src="Taralalero Tralala.png" alt="Taralalero" class="characterOption" data-src="Taralalero Tralala.png">
-            <img src="Bombardino.png" alt="Bombardino" class="characterOption" data-src="Bombardino.png">
-            <img src="Barellina Cuppucina.png" alt="Barellina" class="characterOption" data-src="Barellina Cuppucina.png">
-            <img src="Garamararaman.png" alt="Garamararaman" class="characterOption" data-src="Garamararaman.png">
-        </div>
-    </div>
-    
-    <!-- About Panel -->
-    <div id="aboutPanel" class="panel">
-        <button class="closeBtn" id="closeAbout">×</button>
-        <h2>ABOUT</h2>
-        <p style="line-height:1.6;font-size:0.9rem;">
-            A polished Flappy Bird tribute.<br>
-            Built as a fun test project.<br><br>
-            Made with ❤️ for the brainrot community.
-        </p>
-    </div>
-    
-    <!-- Pause Button -->
-    <div id="pauseBtn">⏸</div>
-    
-    <!-- Game Over Screen -->
-    <div id="gameOverScreen">
-        <h2 style="font-size:2.8rem;margin:0;color:#ff3366;text-shadow:0 0 20px #ff3366;">GAME OVER</h2>
-        <div id="medal" style="font-size:6rem;">🏆</div>
-        <div style="margin:10px 0;">
-            <div style="font-size:1.1rem;opacity:0.8;">SCORE</div>
-            <div id="finalScore" style="font-size:3rem;color:#ffff00;">0</div>
-        </div>
-        <div style="margin:10px 0;">
-            <div style="font-size:1.1rem;opacity:0.8;">BEST</div>
-            <div id="finalBest" style="font-size:2rem;color:#aaa;">0</div>
-        </div>
-        <button id="restartBtn" class="menuButton" style="width:240px;margin-top:20px;">RESTART</button>
-        <button id="homeFromOverBtn" class="menuButton" style="width:240px;background:rgba(255,255,255,0.1);">HOME</button>
-    </div>
+
+<div id="homeScreen">
+  <h1>Brainrot Flappy</h1>
+  <button class="menuButton" id="startBtn">Start</button>
+  <button class="menuButton" id="settingsBtn">Settings</button>
+  <button class="menuButton" id="characterBtn">Select Character</button>
+  <button class="menuButton" id="aboutBtn">About Us</button>
 </div>
 
-<audio id="bgm" loop preload="auto">
-    <source src="bgm.mp3" type="audio/mpeg">
-</audio>
-<audio id="flapSfx" preload="auto">
-    <source src="https://freesound.org/data/previews/276/276951_5123853-lq.mp3" type="audio/mpeg">
-</audio>
-<audio id="hitSfx" preload="auto">
-    <source src="https://freesound.org/data/previews/131/131660_2390098-lq.mp3" type="audio/mpeg">
-</audio>
-<audio id="scoreSfx" preload="auto">
-    <source src="https://freesound.org/data/previews/269/269699_5123853-lq.mp3" type="audio/mpeg">
-</audio>
+<div id="settingsPanel">
+  <h2>Settings</h2>
+  <label><input type="checkbox" id="muteMusic"> Mute Music</label>
+
+  <label for="brightnessRange">Brightness</label>
+  <input type="range" id="brightnessRange" min="0.5" max="1.5" step="0.01" value="1">
+
+  <label for="sensitivityRange">Sensitivity (Jump Power)</label>
+  <input type="range" id="sensitivityRange" min="6" max="10" step="0.1" value="7.5">
+
+  <button id="closeSettings">Close</button>
+</div>
+
+<div id="aboutPanel">
+  <h2>About Us</h2>
+  <p>Developer: Edrian</p>
+  <p>This game is built for a test only and it does not have full security.<br>Thank you :) It's a prank!</p>
+  <button id="closeAbout">Close</button>
+</div>
+
+<div id="characterPanel">
+  <h2>Select Your Character</h2>
+  <div class="characterGrid">
+    <img src="Tung Tung Sahur.png" alt="Tung Tung Sahur" class="characterOption selected" data-src="Tung Tung Sahur.png" />
+    <img src="Taralalero Tralala.png" alt="Taralalero Tralala" class="characterOption" data-src="Taralalero Tralala.png" />
+    <img src="Bombardino.png" alt="Bombardino" class="characterOption" data-src="Bombardino.png" />
+    <img src="Barellina Cuppucina.png" alt="Barellina Cuppucina" class="characterOption" data-src="Barellina Cuppucina.png" />
+    <img src="Garamararaman.png" alt="Garamararaman" class="characterOption" data-src="Garamararaman.png" />
+  </div>
+  <button id="closeCharacter">Close</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<button id="restartBtn">Restart</button>
+<div id="gameOverText">Game Over</div>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<audio id="hitSfx" src="hit.mp3" preload="auto"></audio>
 
 <script>
-// ================ BRAINROT FLAPPY - POLISHED EDITION ================
-
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: true });
+const ctx = canvas.getContext('2d');
 
-let WIDTH = window.innerWidth;
-let HEIGHT = window.innerHeight;
-canvas.width = WIDTH;
-canvas.height = HEIGHT;
+let canvasWidth = window.innerWidth;
+let canvasHeight = window.innerHeight;
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
 
-let gameState = 'HOME'; // HOME, COUNTDOWN, PLAYING, PAUSED, GAMEOVER
-let score = 0;
-let bestScore = parseInt(localStorage.getItem('bfBestScore')) || 0;
-let frames = 0;
-let lastTime = 0;
-
-// Bird
-const bird = {
-    x: 120,
-    y: HEIGHT / 2,
-    w: 48,
-    h: 38,
-    vy: 0,
-    rotation: 0,
-    frame: 0
-};
-
-// Physics
-let gravity = 0.42;
-let flapStrength = -9.2;
-let pipeSpeed = 2.4;
-
-// Pipes
-let pipes = [];
-const PIPE_WIDTH = 78;
-const PIPE_GAP = 190;
-const PIPE_INTERVAL = 95; // frames between pipes
-
-// Background elements
-let clouds = [];
-let groundX = 0;
-
-// Particles
-let particles = [];
-
-// Score popups
-let scorePopups = [];
-
-// Images
-const birdImg = new Image();
-birdImg.src = 'Tung Tung Sahur.png';
-
-// Audio
 const bgm = document.getElementById('bgm');
-const flapSfx = document.getElementById('flapSfx');
 const hitSfx = document.getElementById('hitSfx');
-const scoreSfx = document.getElementById('scoreSfx');
+const muteCheckbox = document.getElementById('muteMusic');
+const brightnessRange = document.getElementById('brightnessRange');
+const sensitivityRange = document.getElementById('sensitivityRange');
 
-let musicVolume = 0.7;
-let sfxVolume = 0.8;
-let isMuted = false;
+const birdImg = new Image();
+birdImg.src = 'Tung Tung Sahur.png'; // default bird
+
+// Game variables
+let frames = 0;
+let gameState = 'HOME'; // HOME, PLAYING, GAMEOVER
+let pipes = [];
+let score = 0;
+let bestScore = 
+  arseInt(localStorage.getItem('bestScore')) || 0;
+let bird = { x: 80, y: canvasHeight / 2, w: 40, h: 30, dy: 0 };
+let jumpPower = -7.5;
+const gravity = 0.38;
+const pipeWidth = 70;
+const pipeGap = 200;
+const pipeSpeed = 1.8;
 
 // UI Elements
 const homeScreen = document.getElementById('homeScreen');
+const startBtn = document.getElementById('startBtn');
+const settingsBtn = document.getElementById('settingsBtn');
+const aboutBtn = document.getElementById('aboutBtn');
 const settingsPanel = document.getElementById('settingsPanel');
-const characterPanel = document.getElementById('characterPanel');
 const aboutPanel = document.getElementById('aboutPanel');
-const gameOverScreen = document.getElementById('gameOverScreen');
-const pauseBtn = document.getElementById('pauseBtn');
+const closeSettings = document.getElementById('closeSettings');
+const closeAbout = document.getElementById('closeAbout');
+const restartBtn = document.getElementById('restartBtn');
+const gameOverText = document.getElementById('gameOverText');
 
-// Setup audio volumes
-function updateAudioVolumes() {
-    bgm.volume = isMuted ? 0 : musicVolume;
-    flapSfx.volume = isMuted ? 0 : sfxVolume;
-    hitSfx.volume = isMuted ? 0 : sfxVolume * 0.9;
-    scoreSfx.volume = isMuted ? 0 : sfxVolume * 0.85;
+const characterBtn = document.getElementById('characterBtn');
+const characterPanel = document.getElementById('characterPanel');
+const closeCharacter = document.getElementById('closeCharacter');
+const characterOptions = document.querySelectorAll('#characterPanel .characterOption');
+
+function resetGame() {
+  bird.y = canvasHeight / 2;
+  bird.dy = 0;
+  pipes = [];
+  score = 0;
+  frames = 0;
+  gameOverText.classList.remove('show');
+  restartBtn.style.display = 'none';
 }
 
-// Create initial clouds
-function createClouds() {
-    clouds = [];
-    for (let i = 0; i < 8; i++) {
-        clouds.push({
-            x: Math.random() * WIDTH * 1.5,
-            y: 80 + Math.random() * 220,
-            size: 60 + Math.random() * 70,
-            speed: 0.3 + Math.random() * 0.4
-        });
-    }
-}
-
-// Particle system
-function createParticles(x, y, count, color, spread = 4) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x + Math.random() * 20 - 10,
-            y: y + Math.random() * 20 - 10,
-            vx: (Math.random() - 0.5) * spread,
-            vy: (Math.random() - 0.5) * spread - 1,
-            life: 28 + Math.random() * 18,
-            color: color,
-            size: 4 + Math.random() * 5
-        });
-    }
-}
-
-// Create pipe
 function createPipe() {
-    const minHeight = 120;
-    const maxHeight = HEIGHT - PIPE_GAP - 160;
-    const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
-    
-    pipes.push({
-        x: WIDTH + 50,
-        top: topHeight,
-        passed: false,
-        w: PIPE_WIDTH
-    });
+  const topHeight = Math.random() * (canvasHeight - pipeGap - 200) + 100;
+  pipes.push({
+    x: canvasWidth,
+    top: topHeight,
+    bottom: topHeight + pipeGap,
+    width: pipeWidth,
+    passed: false
+  });
 }
 
-// Draw background
 function drawBackground() {
-    // Sky gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    grad.addColorStop(0, '#5cc6e8');
-    grad.addColorStop(1, '#a0e0ff');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    
-    // Distant hills
-    ctx.fillStyle = '#4a9c6e';
-    ctx.beginPath();
-    ctx.moveTo(0, HEIGHT * 0.75);
-    ctx.quadraticCurveTo(WIDTH * 0.3, HEIGHT * 0.55, WIDTH * 0.6, HEIGHT * 0.72);
-    ctx.quadraticCurveTo(WIDTH * 0.85, HEIGHT * 0.48, WIDTH, HEIGHT * 0.68);
-    ctx.lineTo(WIDTH, HEIGHT);
-    ctx.lineTo(0, HEIGHT);
-    ctx.fill();
-    
-    // Clouds
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    clouds.forEach(cloud => {
-        ctx.save();
-        ctx.globalAlpha = 0.85;
-        ctx.beginPath();
-        ctx.ellipse(cloud.x, cloud.y, cloud.size * 1.1, cloud.size * 0.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(cloud.x - cloud.size * 0.45, cloud.y - 12, cloud.size * 0.7, cloud.size * 0.55, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(cloud.x + cloud.size * 0.4, cloud.y - 8, cloud.size * 0.65, cloud.size * 0.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    });
+  // simple gradient background for now
+  let gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+  gradient.addColorStop(0, '#70c5ce');
+  gradient.addColorStop(1, '#4298b5');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 }
 
-// Draw ground
-function drawGround() {
-    ctx.fillStyle = '#e8c070';
-    ctx.fillRect(0, HEIGHT - 70, WIDTH, 70);
-    
-    ctx.fillStyle = '#c8a050';
-    for (let x = groundX % 60 - 60; x < WIDTH; x += 60) {
-        ctx.fillRect(x, HEIGHT - 70, 35, 12);
-    }
-}
-
-// Draw bird
 function drawBird() {
     ctx.save();
-    ctx.translate(bird.x + bird.w / 2, bird.y + bird.h / 2);
-    
-    // Rotation (clamp between -30 and 90 degrees)
-    const targetRot = Math.max(-30, Math.min(80, bird.vy * 3.5));
-    bird.rotation = bird.rotation * 0.85 + targetRot * 0.15;
-    ctx.rotate(bird.rotation * Math.PI / 180);
-    
-    // Slight wing flap
-    const wingOffset = Math.sin(frames / 5) * 3;
-    
+
+    ctx.translate(
+        bird.x + bird.w / 2,
+        bird.y + bird.h / 2
+    );
+
+    let angle = Math.max(
+        -0.5,
+        Math.min(1, bird.dy * 0.05)
+    );
+
+    ctx.rotate(angle);
+
     ctx.drawImage(
         birdImg,
         -bird.w / 2,
-        -bird.h / 2 + wingOffset,
+        -bird.h / 2,
         bird.w,
         bird.h
     );
-    
+
     ctx.restore();
 }
 
-// Draw pipes
+function drawPipeDetails(x, y, width, height, isTop) {
+  // Green base pipe
+  ctx.fillStyle = '#228B22';
+  ctx.fillRect(x, y, width, height);
+
+  // Pipe edges highlight
+  ctx.strokeStyle = '#2ecc40';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, width, height);
+
+  // Add pipe "rings" details
+  ctx.fillStyle = '#196619';
+  const ringCount = Math.floor(height / 15);
+  for (let i = 0; i < ringCount; i++) {
+    let ringY = y + i * 15;
+    ctx.fillRect(x, ringY, width, 5);
+  }
+
+  // Pipe opening edge (circle)
+  if (isTop) {
+    ctx.beginPath();
+    ctx.fillStyle = '#1e7d1e';
+    ctx.arc(x + width / 2, y + height, width / 2, Math.PI, 0);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = '#1e7d1e';
+    ctx.arc(x + width / 2, y, width / 2, 0, Math.PI);
+    ctx.fill();
+  }
+}
+
 function drawPipes() {
-    pipes.forEach(pipe => {
-        // Top pipe
-        ctx.fillStyle = '#3d8c40';
-        ctx.fillRect(pipe.x, 0, pipe.w, pipe.top);
-        
-        // Top pipe highlight
-        ctx.fillStyle = '#5ac15a';
-        ctx.fillRect(pipe.x + 4, 0, 14, pipe.top);
-        
-        // Top rim
-        ctx.fillStyle = '#2a6a2c';
-        ctx.fillRect(pipe.x - 6, pipe.top - 38, pipe.w + 12, 38);
-        ctx.fillStyle = '#66cc66';
-        ctx.fillRect(pipe.x, pipe.top - 34, pipe.w, 8);
-        
-        // Bottom pipe
-        const bottomY = pipe.top + PIPE_GAP;
-        ctx.fillStyle = '#3d8c40';
-        ctx.fillRect(pipe.x, bottomY, pipe.w, HEIGHT - bottomY + 10);
-        
-        // Bottom highlight
-        ctx.fillStyle = '#5ac15a';
-        ctx.fillRect(pipe.x + 4, bottomY, 14, HEIGHT - bottomY);
-        
-        // Bottom rim
-        ctx.fillStyle = '#2a6a2c';
-        ctx.fillRect(pipe.x - 6, bottomY, pipe.w + 12, 38);
-        ctx.fillStyle = '#66cc66';
-        ctx.fillRect(pipe.x, bottomY, pipe.w, 8);
-    });
+  pipes.forEach(pipe => {
+    // top pipe
+    drawPipeDetails(pipe.x, 0, pipe.width, pipe.top, true);
+    // bottom pipe
+    drawPipeDetails(pipe.x, pipe.bottom, pipe.width, canvasHeight - pipe.bottom, false);
+  });
 }
 
-// Update clouds
-function updateClouds() {
-    clouds.forEach(cloud => {
-        cloud.x -= cloud.speed;
-        if (cloud.x < -200) {
-            cloud.x = WIDTH + 150 + Math.random() * 300;
-        }
-    });
+function drawScore() {
+  ctx.fillStyle = 'white';
+  ctx.font = '28px Arial';
+  ctx.fillText(`Score: ${score}`, 20, 50);
+  ctx.fillText(`Best: ${bestScore}`, 20, 90);
 }
 
-// Update particles
-function updateParticles() {
-    for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.18;
-        p.life--;
-        p.vx *= 0.98;
-        if (p.life <= 0) particles.splice(i, 1);
+function updateGame() {
+  frames++;
+
+  bird.dy += gravity;
+  bird.y += bird.dy;
+
+  if (bird.y + bird.h >= canvasHeight) {
+    bird.y = canvasHeight - bird.h;
+    triggerGameOver() 
+    bestScore = Math.max(bestScore, score);
+    
+localStorage.setItem(
+    'bestScore',
+    bestScore
+);
+    
+  if (bird.y < 0) {
+    bird.y = 0;
+    bird.dy = 0;
+  }
+
+  if (frames % 98 === 0) {
+    createPipe();
+  }
+
+  pipes.forEach(pipe => {
+    pipe.x -= pipeSpeed;
+  });
+
+  pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+
+  for (let pipe of pipes) {
+    if (
+      bird.x + bird.w > pipe.x &&
+      bird.x < pipe.x + pipe.width &&
+      (bird.y < pipe.top || bird.y + bird.h > pipe.bottom)
+    ) {
+      triggerGameOver();
     }
-}
+  }
 
-// Draw particles
-function drawParticles() {
-    particles.forEach(p => {
-        const alpha = p.life / 40;
-        ctx.globalAlpha = alpha * 0.9;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-    });
-    ctx.globalAlpha = 1;
-}
-
-// Spawn score popup
-function createScorePopup(x, y) {
-    const popup = document.createElement('div');
-    popup.className = 'scorePopup';
-    popup.textContent = '+1';
-    popup.style.left = `${x}px`;
-    popup.style.top = `${y}px`;
-    document.getElementById('gameContainer').appendChild(popup);
-    
-    setTimeout(() => {
-        popup.remove();
-    }, 1400);
-}
-
-// Collision detection
-function checkCollisions() {
-    // Ground / ceiling
-    if (bird.y + bird.h > HEIGHT - 70 || bird.y < -10) {
-        triggerGameOver();
-        return;
+  pipes.forEach(pipe => {
+    if (!pipe.passed && pipe.x + pipe.width < bird.x) {
+      score++;
+      pipe.passed = true;
     }
-    
-    for (let pipe of pipes) {
-        // Top pipe
-        if (
-            bird.x + bird.w > pipe.x && 
-            bird.x < pipe.x + pipe.w &&
-            bird.y < pipe.top
-        ) {
-            triggerGameOver();
-            return;
-        }
-        
-        // Bottom pipe
-        const bottomY = pipe.top + PIPE_GAP;
-        if (
-            bird.x + bird.w > pipe.x && 
-            bird.x < pipe.x + pipe.w &&
-            bird.y + bird.h > bottomY
-        ) {
-            triggerGameOver();
-            return;
-        }
-    }
+  });
 }
 
-// Update game
-function update() {
-    if (gameState !== 'PLAYING') return;
-    
-    frames++;
-    
-    // Bird physics
-    bird.vy += gravity;
-    bird.y += bird.vy;
-    
-    // Update pipes
-    for (let i = 0; i < pipes.length; i++) {
-        const pipe = pipes[i];
-        pipe.x -= pipeSpeed;
-        
-        // Score
-        if (!pipe.passed && pipe.x + pipe.w < bird.x) {
-            pipe.passed = true;
-            score++;
-            createScorePopup(pipe.x + pipe.w + 20, pipe.top + PIPE_GAP / 2);
-            scoreSfx.currentTime = 0;
-            scoreSfx.play();
-            
-            // Progressive difficulty
-            if (score % 8 === 0 && pipeSpeed < 4.2) {
-                pipeSpeed += 0.13;
-            }
-        }
-    }
-    
-    // Remove offscreen pipes
-    pipes = pipes.filter(p => p.x > -100);
-    
-    // Spawn new pipes
-    if (frames % PIPE_INTERVAL === 0) {
-        createPipe();
-    }
-    
-    checkCollisions();
-    updateClouds();
-    updateParticles();
+function triggerGameOver() {
+  if (gameState !== 'PLAYING') return;
+  gameState = 'GAMEOVER';
+  hitSfx.play();
+  bgm.pause();
+  bestScore = Math.max(score, bestScore);
+
+  gameOverText.classList.add('show');
+  restartBtn.style.display = 'block';
 }
 
-// Draw everything
-function draw() {
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    
-    drawBackground();
-    drawPipes();
-    drawBird();
-    drawParticles();
-    drawGround();
-    
-    // Score display
-    if (gameState === 'PLAYING' || gameState === 'COUNTDOWN') {
-        ctx.save();
-        ctx.shadowColor = '#000';
-        ctx.shadowBlur = 12;
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 52px "Press Start 2P"';
-        ctx.textAlign = 'center';
-        ctx.fillText(score, WIDTH / 2, 95);
-        ctx.restore();
-    }
+function showHomeScreen() {
+  homeScreen.style.display = 'flex';
+  canvas.style.display = 'none';
+  gameOverText.classList.remove('show');
+  restartBtn.style.display = 'none';
+  settingsPanel.classList.remove('show');
+  aboutPanel.classList.remove('show');
+  characterPanel.classList.remove('show');
+  gameState = 'HOME';
 }
 
-// Game loop
-function gameLoop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const dt = timestamp - lastTime;
-    
-    update();
-    draw();
-    
-    lastTime = timestamp;
-    requestAnimationFrame(gameLoop);
+function hideHomeScreen() {
+  homeScreen.style.display = 'none';
+  canvas.style.display = 'block';
 }
 
-// Flap
+function gameLoop() {
+  if (gameState === 'PLAYING') {
+    updateGame();
+  }
+  drawBackground();
+  drawPipes();
+  drawBird();
+  drawScore();
+  requestAnimationFrame(gameLoop);
+}
+
 function flap() {
     if (gameState !== 'PLAYING') return;
-    
-    bird.vy = flapStrength;
-    createParticles(bird.x + 10, bird.y + bird.h / 2, 12, '#ffee88', 6);
-    
-    flapSfx.currentTime = 0;
-    flapSfx.play();
-}
 
-// Trigger game over
-function triggerGameOver() {
-    if (gameState !== 'PLAYING') return;
-    
-    gameState = 'GAMEOVER';
-    hitSfx.currentTime = 0;
-    hitSfx.play();
-    bgm.pause();
-    
-    if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem('bfBestScore', bestScore);
-    }
-    
-    pauseBtn.style.display = 'none';
-    
-    // Show game over screen
-    const medalEl = document.getElementById('medal');
-    let medal = '🥉';
-    
-    if (score >= 100) medal = '💎';
-    else if (score >= 50) medal = '🥇';
-    else if (score >= 25) medal = '🥈';
-    
-    medalEl.textContent = medal;
-    
-    document.getElementById('finalScore').textContent = score;
-    document.getElementById('finalBest').textContent = bestScore;
-    gameOverScreen.style.display = 'flex';
-    
-    createParticles(bird.x + 20, bird.y + 10, 35, '#ff3366', 8);
+    bird.dy = Math.max(jumpPower, bird.dy - 2);
 }
-
-// Reset game
-function resetGame() {
-    bird.y = HEIGHT / 2 - 60;
-    bird.vy = 0;
-    bird.rotation = 0;
-    pipes = [];
-    particles = [];
-    score = 0;
-    frames = 0;
-    pipeSpeed = 2.4;
-    gameOverScreen.style.display = 'none';
-}
-
-// Start countdown
-function startCountdown() {
-    gameState = 'COUNTDOWN';
-    resetGame();
-    homeScreen.style.opacity = '0';
-    
-    let count = 3;
-    const countInterval = setInterval(() => {
-        // Could draw countdown on canvas, but for simplicity we just wait
-        count--;
-        if (count <= 0) {
-            clearInterval(countInterval);
-            gameState = 'PLAYING';
-            bgm.currentTime = 0;
-            bgm.play();
-            pauseBtn.style.display = 'flex';
-            createPipe(); // initial pipe
-        }
-    }, 680);
-}
-
-// Input handlers
-function handleInput(e) {
-    if (gameState === 'PLAYING') {
-        flap();
-    } else if (gameState === 'HOME') {
-        // nothing
-    }
-}
-
-// Event listeners
-canvas.addEventListener('mousedown', handleInput);
-canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    handleInput(e);
-});
+  
+canvas.addEventListener('click', flap);
 
 document.addEventListener('keydown', e => {
-    if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (gameState === 'PLAYING') flap();
-    }
-    
-    if (e.code === 'KeyP' && gameState === 'PLAYING') {
-        // Toggle pause
-        if (gameState === 'PLAYING') {
-            gameState = 'PAUSED';
-            pauseBtn.textContent = '▶';
-            bgm.pause();
-        }
+    if (
+        gameState === 'PLAYING' &&
+        (e.code === 'Space' || e.code === 'ArrowUp')
+    ) {
+        flap();
     }
 });
 
-pauseBtn.addEventListener('click', () => {
-    if (gameState === 'PLAYING') {
-        gameState = 'PAUSED';
-        pauseBtn.textContent = '▶';
-        bgm.pause();
-    } else if (gameState === 'PAUSED') {
-        gameState = 'PLAYING';
-        pauseBtn.textContent = '⏸';
-        if (!isMuted) bgm.play();
-    }
-});
-
-// UI Buttons
-document.getElementById('startBtn').onclick = () => {
-    startCountdown();
+startBtn.onclick = () => {
+  gameState = 'PLAYING';
+  resetGame();
+  hideHomeScreen();
+  bgm.currentTime = 0;
+  if (!muteCheckbox.checked) bgm.play();
 };
 
-document.getElementById('characterBtn').onclick = () => {
-    characterPanel.classList.add('show');
+settingsBtn.onclick = () => {
+  settingsPanel.classList.add('show');
 };
 
-document.getElementById('settingsBtn').onclick = () => {
-    settingsPanel.classList.add('show');
+aboutBtn.onclick = () => {
+  aboutPanel.classList.add('show');
 };
 
-document.getElementById('aboutBtn').onclick = () => {
-    aboutPanel.classList.add('show');
+closeSettings.onclick = () => {
+  settingsPanel.classList.remove('show');
 };
 
-// Close buttons
-document.getElementById('closeSettings').onclick = () => settingsPanel.classList.remove('show');
-document.getElementById('closeCharacter').onclick = () => characterPanel.classList.remove('show');
-document.getElementById('closeAbout').onclick = () => aboutPanel.classList.remove('show');
-
-// Character selection
-document.querySelectorAll('.characterOption').forEach(opt => {
-    opt.addEventListener('click', () => {
-        document.querySelectorAll('.characterOption').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-        birdImg.src = opt.dataset.src;
-        characterPanel.classList.remove('show');
-    });
-});
-
-// Restart
-document.getElementById('restartBtn').onclick = () => {
-    resetGame();
-    gameState = 'COUNTDOWN';
-    setTimeout(() => {
-        gameState = 'PLAYING';
-        bgm.currentTime = 0;
-        if (!isMuted) bgm.play();
-        pauseBtn.style.display = 'flex';
-    }, 120);
+closeAbout.onclick = () => {
+  aboutPanel.classList.remove('show');
 };
 
-document.getElementById('homeFromOverBtn').onclick = () => {
-    gameOverScreen.style.display = 'none';
-    homeScreen.style.opacity = '1';
-    gameState = 'HOME';
+restartBtn.onclick = () => {
+  gameState = 'PLAYING';
+  resetGame();
+  restartBtn.style.display = 'none';
+  gameOverText.classList.remove('show');
+  bgm.currentTime = 0;
+  if (!muteCheckbox.checked) bgm.play();
+};
+
+muteCheckbox.onchange = () => {
+  if (muteCheckbox.checked) {
     bgm.pause();
+  } else if (gameState === 'PLAYING') {
+    bgm.play();
+  }
 };
 
-// Settings controls
-document.getElementById('musicVolume').oninput = function() {
-    musicVolume = parseFloat(this.value);
-    updateAudioVolumes();
+brightnessRange.oninput = () => {
+  const val = brightnessRange.value;
+  canvas.style.filter = `brightness(${val})`;
 };
 
-document.getElementById('sfxVolume').oninput = function() {
-    sfxVolume = parseFloat(this.value);
-    updateAudioVolumes();
+sensitivityRange.oninput = () => {
+  jumpPower = -parseFloat(sensitivityRange.value);
 };
 
-document.getElementById('brightnessRange').oninput = function() {
-    const val = parseFloat(this.value);
-    canvas.style.filter = `brightness(${val})`;
+characterBtn.onclick = () => {
+  characterPanel.classList.add('show');
 };
 
-document.getElementById('sensitivityRange').oninput = function() {
-    flapStrength = -parseFloat(this.value);
+closeCharacter.onclick = () => {
+  characterPanel.classList.remove('show');
 };
 
-document.getElementById('muteAll').onchange = function() {
-    isMuted = this.checked;
-    updateAudioVolumes();
-    if (isMuted) bgm.pause();
-    else if (gameState === 'PLAYING') bgm.play();
-};
-
-// Resize handler
-window.addEventListener('resize', () => {
-    WIDTH = window.innerWidth;
-    HEIGHT = window.innerHeight;
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-    
-    if (gameState === 'HOME' || gameState === 'GAMEOVER') {
-        bird.y = HEIGHT / 2;
-    }
+characterOptions.forEach(option => {
+  option.addEventListener('click', () => {
+    characterOptions.forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+    birdImg.src = option.dataset.src;
+    characterPanel.classList.remove('show');
+  });
 });
 
-// Initialize
-function init() {
-    createClouds();
-    updateAudioVolumes();
-    
-    // Make sure character images are loaded
-    birdImg.onload = () => {};
-    
-    // Show home
-    homeScreen.style.opacity = '1';
-    
-    // Start loop
-    requestAnimationFrame(gameLoop);
-    
-    // Demo pipe for home preview (but we don't draw in HOME)
-    console.log('%cBrainrot Flappy v2.0 ready 🚀', 'color:#00ffff;font-family:monospace');
-}
+window.addEventListener('resize', () => {
+  canvasWidth = window.innerWidth;
+  canvasHeight = window.innerHeight;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  // Reset bird position so it's centered vertically
+  if (gameState !== 'PLAYING') {
+    bird.y = canvasHeight / 2;
+  }
+});
 
-init();
+showHomeScreen();
+gameLoop();
 </script>
+
 </body>
 </html>
